@@ -1,3 +1,3 @@
-module github.com/victorbetoni/iris-mq
+module github.com/victorbetoni/razor-mq
 
 go 1.20

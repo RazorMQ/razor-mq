@@ -7,8 +7,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/victorbetoni/iris-mq/message"
-	"github.com/victorbetoni/iris-mq/pc"
+	"github.com/victorbetoni/razor-mq/message"
+	"github.com/victorbetoni/razor-mq/pc"
 )
 
 const (

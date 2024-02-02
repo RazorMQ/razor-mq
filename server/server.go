@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/victorbetoni/iris-mq/broker"
+	"github.com/victorbetoni/razor-mq/broker"
 )
 
 type NewConsumerParams struct {
@@ -14,20 +14,20 @@ type NewBrokerParams struct {
 	Topics []string
 }
 
-type IrisMQ struct {
+type RazorMQ struct {
 	Host    string
 	Brokers []*broker.Broker
 }
 
-func (s *IrisMQ) SetupBroker() error {
+func (s *RazorMQ) SetupBroker() error {
 	return nil
 }
 
-func (s *IrisMQ) NewConsumer(params NewConsumerParams) error {
+func (s *RazorMQ) NewConsumer(params NewConsumerParams) error {
 	return nil
 }
 
-func (s *IrisMQ) Start(port int) error {
+func (s *RazorMQ) Start(port int) error {
 
 	return nil
 }

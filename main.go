@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/victorbetoni/iris-mq/message"
-	"github.com/victorbetoni/iris-mq/queue"
+	"github.com/victorbetoni/razor-mq/message"
+	"github.com/victorbetoni/razor-mq/queue"
 )
 
 var (

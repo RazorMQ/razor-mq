@@ -1,6 +1,6 @@
 package pc
 
-import "github.com/victorbetoni/iris-mq/message"
+import "github.com/victorbetoni/razor-mq/message"
 
 type Producer struct {
 }
