@@ -22,10 +22,9 @@ type brokerMessage struct {
 
 type Broker struct {
 	Port               int
-	ConnectedConsumers []*pc.Consumer
-	ConnectedProducers []*pc.Producer
 	msgChan            chan message.Message
 	Topics             map[string]*Topic
+	ConnectedConsumers map[string]*pc.Consumer
 }
 
 func (b *Broker) HandleMessage(msg message.Message) error {
@@ -35,6 +34,12 @@ func (b *Broker) HandleMessage(msg message.Message) error {
 	}
 	topic.AppendMessage(msg)
 	return nil
+}
+
+func (b *Broker) Subscribe(host string, port int, topics []string) {
+
+	pc.Consumer
+
 }
 
 func (b *Broker) Listen() {
