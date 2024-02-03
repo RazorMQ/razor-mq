@@ -7,10 +7,25 @@ import (
 	"github.com/victorbetoni/razor-mq/queue"
 )
 
+type TopicConfig struct {
+	Id           string
+	MaxQueueSize int64
+}
+
 type Topic struct {
 	Id           string
-	CurrentIndex int
+	CurrentIndex int64
+	MaxQueueSize int64
 	messageQueue *queue.LinkedQueue[message.EnqueuedMessage]
+}
+
+func New(config TopicConfig) *Topic {
+	return &Topic{
+		Id:           config.Id,
+		CurrentIndex: 0,
+		messageQueue: queue.NewLinkedQueue[message.EnqueuedMessage](),
+		MaxQueueSize: config.MaxQueueSize,
+	}
 }
 
 func (t *Topic) AppendMessage(msg message.Message) {

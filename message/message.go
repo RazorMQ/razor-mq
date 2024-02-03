@@ -10,6 +10,6 @@ type EnqueuedMessage struct {
 	ProducerHost string
 	Topic        string
 	Timestamp    string
-	Index        int
+	Index        int64
 	Data         []byte
 }
