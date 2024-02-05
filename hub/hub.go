@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/RazorMQ/razor-mq/message"
 	"github.com/gorilla/websocket"
-	"github.com/victorbetoni/razor-mq/message"
 )
 
 var upgrader = websocket.Upgrader{
@@ -56,8 +56,10 @@ func (h *Hub) Start() {
 		select {
 		case producer := <-h.registerProducer:
 			h.registeredProducers[producer] = true
+			go producer.StartReading()
 		case consumer := <-h.registerConsumer:
 			h.registeredConsumers[consumer] = true
+			go consumer.Stream()
 		case producer := <-h.unregisterProducer:
 			h.registeredProducers[producer] = false
 		case consumer := <-h.unregisterConsumer:

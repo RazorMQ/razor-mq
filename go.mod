@@ -1,4 +1,4 @@
-module github.com/victorbetoni/razor-mq
+module github.com/RazorMQ/razor-mq
 
 go 1.20
 

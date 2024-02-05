@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/victorbetoni/razor-mq/message"
+	"github.com/RazorMQ/razor-mq/message"
 )
 
 type Topic struct {

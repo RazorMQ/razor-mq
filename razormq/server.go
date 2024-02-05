@@ -1,8 +1,8 @@
 package razormq
 
 import (
+	"github.com/RazorMQ/razor-mq/hub"
 	"github.com/gorilla/websocket"
-	"github.com/victorbetoni/razor-mq/hub"
 )
 
 type RazorMQConfig struct {
