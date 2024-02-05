@@ -2,14 +2,18 @@ package hub
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
-	"net"
+	"net/http"
 	"strings"
 
-	"github.com/victorbetoni/razor-mq/razormq"
+	"github.com/gorilla/websocket"
+	"github.com/victorbetoni/razor-mq/message"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Handshake struct {
 	ApplicationType string   `json:"application_type"`
@@ -20,64 +24,91 @@ type Handshake struct {
 }
 
 type Hub struct {
-	razorMq         *razormq.RazorMQ
-	consumerHubPort int
-	consumerHubChan chan Handshake
+	registeredTopics    map[string]*Topic
+	registeredProducers map[*ProducerClient]bool
+	registeredConsumers map[*ConsumerClient]bool
+	producerMessages    chan []byte
+	unregisterProducer  chan *ProducerClient
+	unregisterConsumer  chan *ConsumerClient
+	registerProducer    chan *ProducerClient
+	registerConsumer    chan *ConsumerClient
 }
 
-func NewHub(razorMq *razormq.RazorMQ, port int) *Hub {
+func NewHub() *Hub {
 	return &Hub{
-		razorMq:         razorMq,
-		consumerHubPort: port,
-		consumerHubChan: make(chan Handshake),
+		registeredTopics:    make(map[string]*Topic),
+		registeredProducers: make(map[*ProducerClient]bool),
+		registeredConsumers: make(map[*ConsumerClient]bool),
+		producerMessages:    make(chan []byte),
+		registerProducer:    make(chan *ProducerClient),
+		registerConsumer:    make(chan *ConsumerClient),
+		unregisterProducer:  make(chan *ProducerClient),
+		unregisterConsumer:  make(chan *ConsumerClient),
 	}
 }
 
-func (h *Hub) OpenConsumerHub() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", h.consumerHubPort))
-	if err != nil {
-		panic(err)
+func (h *Hub) RegisterTopic(id string) {
+	h.registeredTopics[id] = NewTopic(id)
+}
+
+func (h *Hub) Start() {
+	for {
+		select {
+		case producer := <-h.registerProducer:
+			h.registeredProducers[producer] = true
+		case consumer := <-h.registerConsumer:
+			h.registeredConsumers[consumer] = true
+		case producer := <-h.unregisterProducer:
+			h.registeredProducers[producer] = false
+		case consumer := <-h.unregisterConsumer:
+			h.registeredConsumers[consumer] = false
+		case message := <-h.producerMessages:
+			h.handleMessage(message)
+		}
 	}
-	go func() {
-		defer listener.Close()
-		for {
-			connection, err := listener.Accept()
-			if err != nil {
-				log.Fatal(err)
-				continue
-			}
-			go func(c net.Conn) {
-				io.Copy(c, c)
-				defer c.Close()
+}
 
-				buf := make([]byte, 1024)
-				_, err := c.Read(buf)
-				if err != nil {
-					log.Fatal(err)
-				}
+func (h *Hub) handleMessage(msg []byte) {
+	message := &message.Message{}
 
-				data := &Handshake{}
-				if err := json.Unmarshal(buf, data); err != nil {
-					log.Fatal("handshake message with wrong format")
-					c.Close()
-					return
-				}
-				data.Host = c.RemoteAddr().String()
-				h.consumerHubChan <- *data
-			}(connection)
+	if err := json.Unmarshal(msg, message); err != nil {
+		return
+	}
+
+	topic, ok := h.registeredTopics[message.Topic]
+	if !ok {
+		return
+	}
+
+	topic.AppendMessage(*message)
+}
+
+func (h *Hub) HandlePeer(w http.ResponseWriter, r *http.Request) {
+	t, ok := r.Header[http.CanonicalHeaderKey("RazorMQ-Application-Type")]
+	if !ok {
+		return
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+
+	if strings.EqualFold(t[0], "consumer") {
+		client := &ConsumerClient{
+			hub:  h,
+			conn: conn,
+			send: make(chan []byte),
 		}
-	}()
+		h.registerConsumer <- client
+	}
 
-	go func() {
-		for {
-			handshake := <-h.consumerHubChan
-			if strings.EqualFold(handshake.ApplicationType, "consumer") {
-				h.razorMq.NewConsumer(razormq.NewConsumerParams{
-					Host:           handshake.Host,
-					ReadStartIndex: handshake.ReadStartIndex,
-					Topics:         handshake.Topics,
-				})
-			}
+	if strings.EqualFold(t[0], "producer") {
+		client := &ProducerClient{
+			hub:  h,
+			conn: conn,
 		}
-	}()
+		h.registerProducer <- client
+	}
+
 }

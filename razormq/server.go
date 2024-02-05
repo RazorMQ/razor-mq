@@ -1,23 +1,18 @@
 package razormq
 
 import (
-	"github.com/victorbetoni/razor-mq/broker"
-	"github.com/victorbetoni/razor-mq/pc"
+	"github.com/gorilla/websocket"
+	"github.com/victorbetoni/razor-mq/hub"
 )
 
 type RazorMQConfig struct {
-	MaxQueueSize int64
-	AllTopics    []string
-	Brokers      []struct {
-		Port   int64
-		Topics []string
-	}
+	Topics []string
+	Port   int
 }
 
 type NewConsumerParams struct {
-	Host           string
-	ReadStartIndex int64
-	Topics         []string
+	Conn   *websocket.Conn
+	Topics []string
 }
 
 type NewBrokerParams struct {
@@ -26,28 +21,17 @@ type NewBrokerParams struct {
 }
 
 type RazorMQ struct {
-	Brokers []*broker.Broker
+	Hub *hub.Hub
 }
 
 func New(config RazorMQConfig) *RazorMQ {
-	razormq := &RazorMQ{}
-	for _, br := range config.Brokers {
-		topics := map[string]*broker.Topic{}
-		for _, tp := range br.Topics {
-			topics[tp] = &broker.Topic{
-				Id:           tp,
-				CurrentIndex: 0,
-				MaxQueueSize: config.MaxQueueSize,
-			}
-		}
-		razormq.Brokers = append(razormq.Brokers, &broker.Broker{
-			Port:               int(br.Port),
-			Topics:             topics,
-			ConnectedConsumers: make(map[string]*pc.Consumer, 0),
-		})
+	h := hub.NewHub()
+	for _, topic := range config.Topics {
+		h.RegisterTopic(topic)
 	}
-
-	return razormq
+	return &RazorMQ{
+		Hub: h,
+	}
 }
 
 func (s *RazorMQ) SetupBroker() error {
