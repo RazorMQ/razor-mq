@@ -38,8 +38,6 @@ func (b *Broker) HandleMessage(msg message.Message) error {
 
 func (b *Broker) Subscribe(host string, port int, topics []string) {
 
-	pc.Consumer
-
 }
 
 func (b *Broker) Listen() {

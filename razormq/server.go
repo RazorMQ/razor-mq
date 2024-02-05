@@ -1,4 +1,4 @@
-package server
+package razormq
 
 import (
 	"github.com/victorbetoni/razor-mq/broker"
@@ -16,7 +16,7 @@ type RazorMQConfig struct {
 
 type NewConsumerParams struct {
 	Host           string
-	ReadStartIndex int
+	ReadStartIndex int64
 	Topics         []string
 }
 
@@ -43,8 +43,7 @@ func New(config RazorMQConfig) *RazorMQ {
 		razormq.Brokers = append(razormq.Brokers, &broker.Broker{
 			Port:               int(br.Port),
 			Topics:             topics,
-			ConnectedConsumers: make([]*pc.Consumer, 0),
-			ConnectedProducers: make([]*pc.Producer, 0),
+			ConnectedConsumers: make(map[string]*pc.Consumer, 0),
 		})
 	}
 
